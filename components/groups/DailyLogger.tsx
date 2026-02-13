@@ -2,20 +2,32 @@
 
 import { useState } from 'react'
 import { useDailyLogsStore } from '@/store/useDailyLogsStore'
-import type { DailyLog } from '@/types'
+import type { DailyLog, Group } from '@/types'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
+import { differenceInDays, startOfDay, parseISO } from 'date-fns'
 
 interface DailyLoggerProps {
   groupId: string
   userId: string
   todayLog: DailyLog | null
+  group: Group
 }
 
-export default function DailyLogger({ groupId, userId, todayLog }: DailyLoggerProps) {
+export default function DailyLogger({ groupId, userId, todayLog, group }: DailyLoggerProps) {
   const { logCompletion, fetchGroupLogs, isLoading } = useDailyLogsStore()
   const [note, setNote] = useState('')
   const [error, setError] = useState('')
+
+  // Calculate current day number based on group start date
+  const calculateCurrentDay = () => {
+    const startDate = startOfDay(parseISO(group.start_date))
+    const today = startOfDay(new Date())
+    const daysSinceStart = differenceInDays(today, startDate)
+    return Math.min(Math.max(daysSinceStart + 1, 1), 100)
+  }
+
+  const currentDayNumber = todayLog?.day_number || calculateCurrentDay()
 
   const handleLogCompletion = async () => {
     setError('')
@@ -68,7 +80,7 @@ export default function DailyLogger({ groupId, userId, todayLog }: DailyLoggerPr
       <div className="space-y-6">
         <div>
           <h2 className="text-3xl mb-2 text-foreground">
-            Day {todayLog?.day_number || '1'}
+            Day {currentDayNumber}
           </h2>
           <p className="text-muted">
             Complete 100 pushups

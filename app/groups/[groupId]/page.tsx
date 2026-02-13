@@ -36,50 +36,45 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     const loadData = async () => {
       if (!groupId) return
 
+      console.log('[GroupDetail] Starting to load data for group:', groupId)
+      console.log('[GroupDetail] Current groups in store:', groups.length)
+
       if (isMounted) {
         setIsLoading(true)
         setError(null)
         setCurrentGroup(groupId)
       }
 
-      // Set a timeout to prevent infinite loading
-      const timeoutId = setTimeout(() => {
-        if (isMounted) {
-          console.warn('Data loading timed out')
-          setError('Loading timed out. Please refresh the page.')
-          setIsLoading(false)
-        }
-      }, 10000) // 10 second timeout
-
       try {
         // If groups array is empty, fetch user's groups first
         const hasGroups = groups.length > 0
         if (!hasGroups) {
-          console.log('Fetching user groups...')
+          console.log('[GroupDetail] Fetching user groups...')
           await fetchUserGroups(user.id)
+          console.log('[GroupDetail] User groups fetched')
         }
 
         // Fetch today's log and stats
-        console.log('Fetching group data for:', groupId)
+        console.log('[GroupDetail] Fetching today log and stats for:', groupId)
         await Promise.all([
           fetchTodayLog(groupId, user.id).catch(err => {
-            console.error('Failed to fetch today log:', err)
+            console.error('[GroupDetail] Failed to fetch today log:', err)
             return null
           }),
           fetchUserStats(groupId, user.id).catch(err => {
-            console.error('Failed to fetch user stats:', err)
+            console.error('[GroupDetail] Failed to fetch user stats:', err)
             return null
           }),
         ])
 
-        clearTimeout(timeoutId)
+        console.log('[GroupDetail] Data loaded successfully')
       } catch (error) {
-        console.error('Error loading group data:', error)
+        console.error('[GroupDetail] Error loading group data:', error)
         if (isMounted) {
           setError('Failed to load group data. Please try again.')
         }
-        clearTimeout(timeoutId)
       } finally {
+        console.log('[GroupDetail] Setting loading to false')
         if (isMounted) {
           setIsLoading(false)
         }
@@ -188,6 +183,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               groupId={groupId}
               userId={user.id}
               todayLog={todayLog}
+              group={currentGroup}
             />
 
             {/* Quick Actions */}
