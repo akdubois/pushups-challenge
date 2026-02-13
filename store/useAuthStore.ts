@@ -94,12 +94,13 @@ export const useAuthStore = create<AuthState>()(
               })
             } else {
               console.error('[Auth] Profile not found or error:', profileError)
+              console.error('[Auth] Signing out due to missing profile')
               // Profile doesn't exist, clear session
               await supabase.auth.signOut()
               set({ user: null, session: null, isInitialized: true })
             }
           } else {
-            console.log('[Auth] No session found')
+            console.log('[Auth] No session found on init')
             set({ user: null, session: null, isInitialized: true })
           }
 
@@ -141,7 +142,9 @@ export const useAuthStore = create<AuthState>()(
                 })
               }
             } else {
-              console.log('[Auth] No user in session')
+              console.log('[Auth] No user in session event')
+              console.log('[Auth] Event type:', event)
+              console.trace('[Auth] Setting user to null - stack trace:')
               set({ user: null, session: null })
             }
           })
@@ -232,6 +235,8 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: async () => {
+        console.log('[Auth] LOGOUT called')
+        console.trace('[Auth] Logout stack trace:')
         set({ isLoading: true })
         try {
           await supabase.auth.signOut()
