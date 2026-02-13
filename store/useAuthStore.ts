@@ -36,10 +36,18 @@ export const useAuthStore = create<AuthState>()(
 
       initialize: async () => {
         try {
+          console.log('[Auth] Initializing auth state...')
+
           // Get the current session from Supabase (checks localStorage automatically)
-          const { data: { session } } = await supabase.auth.getSession()
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+          console.log('[Auth] Session retrieved:', session?.user?.email || 'No session')
+          if (sessionError) {
+            console.error('[Auth] Session error:', sessionError)
+          }
 
           if (session?.user) {
+            console.log('[Auth] Session found, fetching user profile...')
             // Fetch user profile from database
             const { data: profile, error: profileError } = await supabase
               .from('users')
@@ -48,27 +56,48 @@ export const useAuthStore = create<AuthState>()(
               .single()
 
             if (!profileError && profile) {
+              console.log('[Auth] Profile found, setting user state')
               set({
                 user: mapSupabaseUser(session.user, profile),
                 session,
                 isInitialized: true,
               })
             } else {
+              console.error('[Auth] Profile not found or error:', profileError)
               // Profile doesn't exist, clear session
               await supabase.auth.signOut()
               set({ user: null, session: null, isInitialized: true })
             }
           } else {
+            console.log('[Auth] No session found')
             set({ user: null, session: null, isInitialized: true })
           }
 
           // Set up auth state listener for future changes
           supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('Auth state changed:', event, session?.user?.email)
+            console.log('[Auth] State changed:', event, session?.user?.email || 'No user')
 
             if (event === 'SIGNED_OUT') {
+              console.log('[Auth] User signed out')
               set({ user: null, session: null })
-            } else if (session?.user) {
+            } else if (event === 'TOKEN_REFRESHED') {
+              console.log('[Auth] Token refreshed, updating session')
+              if (session?.user) {
+                const { data: profile } = await supabase
+                  .from('users')
+                  .select('*')
+                  .eq('id', session.user.id)
+                  .single()
+
+                if (profile) {
+                  set({
+                    user: mapSupabaseUser(session.user, profile),
+                    session,
+                  })
+                }
+              }
+            } else if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
+              console.log('[Auth] User signed in or initial session')
               const { data: profile } = await supabase
                 .from('users')
                 .select('*')
@@ -82,6 +111,7 @@ export const useAuthStore = create<AuthState>()(
                 })
               }
             } else {
+              console.log('[Auth] No user in session')
               set({ user: null, session: null })
             }
           })
