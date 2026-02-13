@@ -80,18 +80,10 @@ export default function GroupMembersPage({ params }: { params: Promise<{ groupId
 
       console.log('[Members] Found group:', group.name)
 
-      // Fetch all group memberships with user details
+      // Fetch all group memberships
       const { data: memberships, error: membershipsError } = await supabase
         .from('group_memberships')
-        .select(`
-          user_id,
-          is_admin,
-          users!group_memberships_user_id_fkey (
-            id,
-            first_name,
-            last_name
-          )
-        `)
+        .select('user_id, is_admin')
         .eq('group_id', groupId)
         .eq('deleted', false)
 
@@ -106,17 +98,31 @@ export default function GroupMembersPage({ params }: { params: Promise<{ groupId
         return
       }
 
+      // Fetch user details separately (to avoid RLS issues with foreign key joins)
+      const userIds = memberships.map((m: any) => m.user_id)
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('id, first_name, last_name')
+        .in('id', userIds)
+
+      console.log('[Members] Users response:', { users, error: usersError })
+
+      if (usersError) throw usersError
+
+      // Create a map for quick lookup
+      const usersMap = new Map(users?.map((u: any) => [u.id, u]) || [])
+
       const today = startOfDay(new Date()).toISOString().split('T')[0]
 
       // For each member, get their stats
       const memberProgressPromises = memberships.map(async (membership: any) => {
         const userId = membership.user_id
-        const userInfo = membership.users
+        const userInfo = usersMap.get(userId)
 
         console.log('[Members] Processing member:', userId, userInfo)
 
         if (!userInfo) {
-          console.error('[Members] No user info for membership:', membership)
+          console.error('[Members] No user info for user_id:', userId)
           return null
         }
 
