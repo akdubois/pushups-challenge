@@ -26,7 +26,7 @@ interface MemberProgress {
 export default function GroupMembersPage({ params }: { params: Promise<{ groupId: string }> }) {
   const router = useRouter()
   const { user, isInitialized } = useAuthStore()
-  const { groups } = useGroupStore()
+  const { groups, fetchUserGroups } = useGroupStore()
   const [members, setMembers] = useState<MemberProgress[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [encouragingUserId, setEncouragingUserId] = useState<string | null>(null)
@@ -36,27 +36,49 @@ export default function GroupMembersPage({ params }: { params: Promise<{ groupId
   const currentGroup = groups.find((g) => g.id === groupId)
 
   useEffect(() => {
+    console.log('[Members] useEffect triggered', { isInitialized, hasUser: !!user, groupId, hasCurrentGroup: !!currentGroup })
+
     if (isInitialized && !user) {
+      console.log('[Members] No user, redirecting to login')
       router.push('/login')
       return
     }
 
     if (!isInitialized || !user) {
+      console.log('[Members] Waiting for auth initialization')
       return
     }
 
-    loadMembers()
+    const loadData = async () => {
+      // If groups array is empty, fetch user's groups first
+      if (groups.length === 0) {
+        console.log('[Members] Fetching user groups first...')
+        await fetchUserGroups(user.id)
+      }
+
+      // Now load members
+      console.log('[Members] Calling loadMembers')
+      await loadMembers()
+    }
+
+    loadData()
   }, [user, isInitialized, groupId, router])
 
   const loadMembers = async () => {
-    if (!currentGroup) {
-      console.log('[Members] No current group found')
-      return
-    }
-
     try {
       setIsLoading(true)
       console.log('[Members] Loading members for group:', groupId)
+
+      // Get current group from store
+      const { groups: currentGroups } = useGroupStore.getState()
+      const group = currentGroups.find((g) => g.id === groupId)
+
+      if (!group) {
+        console.error('[Members] Group not found in store')
+        throw new Error('Group not found')
+      }
+
+      console.log('[Members] Found group:', group.name)
 
       // Fetch all group memberships with user details
       const { data: memberships, error: membershipsError } = await supabase
@@ -162,8 +184,11 @@ export default function GroupMembersPage({ params }: { params: Promise<{ groupId
 
       setMembers(memberProgress)
     } catch (error) {
-      console.error('Error loading members:', error)
+      console.error('[Members] Error loading members:', error)
+      alert(`Error loading members: ${error.message || 'Unknown error'}`)
+      setMembers([])
     } finally {
+      console.log('[Members] Setting loading to false')
       setIsLoading(false)
     }
   }
