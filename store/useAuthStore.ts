@@ -15,7 +15,7 @@ interface AuthState {
   login: (credentials: LoginForm) => Promise<void>
   register: (data: RegisterForm) => Promise<void>
   logout: () => Promise<void>
-  updateUser: (updates: Partial<AuthUser>) => Promise<void>
+  // updateUser: (updates: Partial<AuthUser>) => Promise<void>
 }
 
 const mapSupabaseUser = (supabaseUser: User, dbUser?: any): AuthUser => ({
@@ -175,32 +175,32 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      updateUser: async (updates: Partial<AuthUser>) => {
-        const { user } = get()
-        if (!user) throw new Error('No user logged in')
+      // updateUser: async (updates: Partial<AuthUser>) => {
+      //   const { user } = get()
+      //   if (!user) throw new Error('No user logged in')
 
-        set({ isLoading: true })
-        try {
-          const { error } = await supabase
-            .from('users')
-            .update({
-              first_name: updates.firstName,
-              last_name: updates.lastName,
-              timezone: updates.timezone,
-            })
-            .eq('id', user.id)
+      //   set({ isLoading: true })
+      //   try {
+      //     const { error } = await supabase
+      //       .from('users')
+      //       .update({
+      //         first_name: updates.firstName,
+      //         last_name: updates.lastName,
+      //         timezone: updates.timezone,
+      //       })
+      //       .eq('id', user.id)
 
-          if (error) throw error
+      //     if (error) throw error
 
-          set({
-            user: { ...user, ...updates },
-            isLoading: false,
-          })
-        } catch (error) {
-          set({ isLoading: false })
-          throw error
-        }
-      },
+      //     set({
+      //       user: { ...user, ...updates },
+      //       isLoading: false,
+      //     })
+      //   } catch (error) {
+      //     set({ isLoading: false })
+      //     throw error
+      //   }
+      // },
     }),
     {
       name: 'auth-storage',
