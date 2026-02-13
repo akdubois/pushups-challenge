@@ -199,6 +199,11 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                 Quick Actions
               </h3>
               <div className="space-y-3">
+                <Link href={`/groups/${groupId}/members`}>
+                  <Button variant="primary" className="w-full py-3">
+                    👥 View Members & Progress
+                  </Button>
+                </Link>
                 <Link href={`/groups/${groupId}/history`}>
                   <Button variant="secondary" className="w-full py-3">
                     📅 View & Edit History
@@ -220,9 +225,9 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               <div className="text-center py-4">
                 <p className="text-sm text-muted mb-4">Coming Soon</p>
                 <div className="space-y-2">
-                  <p className="text-foreground">📊 Group Leaderboard</p>
                   <p className="text-foreground">🎉 Activity Feed</p>
-                  <p className="text-foreground">💪 Cheers & Comments</p>
+                  <p className="text-foreground">⚡ Real-time Updates</p>
+                  <p className="text-foreground">🏆 Achievements</p>
                 </div>
               </div>
             </Card>
