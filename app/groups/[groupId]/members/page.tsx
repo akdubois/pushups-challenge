@@ -100,17 +100,21 @@ export default function GroupMembersPage({ params }: { params: Promise<{ groupId
 
       // Fetch user details separately (to avoid RLS issues with foreign key joins)
       const userIds = memberships.map((m: any) => m.user_id)
+      console.log('[Members] Fetching users for IDs:', userIds)
+
       const { data: users, error: usersError } = await supabase
         .from('users')
         .select('id, first_name, last_name')
         .in('id', userIds)
 
-      console.log('[Members] Users response:', { users, error: usersError })
+      console.log('[Members] Users response:', { users, usersCount: users?.length, error: usersError })
+      console.log('[Members] Full users array:', JSON.stringify(users))
 
       if (usersError) throw usersError
 
       // Create a map for quick lookup
       const usersMap = new Map(users?.map((u: any) => [u.id, u]) || [])
+      console.log('[Members] UsersMap size:', usersMap.size)
 
       const today = startOfDay(new Date()).toISOString().split('T')[0]
 
