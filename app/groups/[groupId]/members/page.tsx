@@ -29,8 +29,6 @@ export default function GroupMembersPage({ params }: { params: Promise<{ groupId
   const { groups, fetchUserGroups } = useGroupStore()
   const [members, setMembers] = useState<MemberProgress[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [encouragingUserId, setEncouragingUserId] = useState<string | null>(null)
-  const [encouragementMessage, setEncouragementMessage] = useState('')
 
   const { groupId } = use(params)
   const currentGroup = groups.find((g) => g.id === groupId)
@@ -203,55 +201,6 @@ export default function GroupMembersPage({ params }: { params: Promise<{ groupId
     }
   }
 
-  const sendEncouragement = async (toUserId: string) => {
-    if (!user || !encouragementMessage.trim()) return
-
-    try {
-      setIsLoading(true)
-
-      // Find today's log for the user
-      const today = startOfDay(new Date()).toISOString().split('T')[0]
-
-      const { data: todayLog, error: logError } = await supabase
-        .from('daily_logs')
-        .select('id')
-        .eq('group_id', groupId)
-        .eq('user_id', toUserId)
-        .eq('log_date', today)
-        .eq('deleted', false)
-        .maybeSingle()
-
-      if (logError) throw logError
-
-      if (!todayLog) {
-        alert('Cannot send encouragement yet - this user needs to create their daily log entry first.')
-        setEncouragingUserId(null)
-        setIsLoading(false)
-        return
-      }
-
-      // Add encouragement as a comment
-      const { error: commentError } = await supabase
-        .from('comments')
-        .insert({
-          daily_log_id: todayLog.id,
-          user_id: user.id,
-          content: `💪 ${encouragementMessage}`,
-        })
-
-      if (commentError) throw commentError
-
-      setEncouragementMessage('')
-      setEncouragingUserId(null)
-      alert('Encouragement sent! 🎉')
-    } catch (error) {
-      console.error('Error sending encouragement:', error)
-      alert('Failed to send encouragement. Please try again.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   if (!isInitialized || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -309,89 +258,39 @@ export default function GroupMembersPage({ params }: { params: Promise<{ groupId
           <div className="space-y-4">
             {members.map((member) => (
               <Card key={member.userId} className={member.todayCompleted ? 'bg-surface' : 'bg-accent/5'}>
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="text-3xl">
-                        {member.todayCompleted ? '✅' : '⭕'}
-                      </div>
-                      <div>
-                        <h3 className="text-xl text-foreground">
-                          {member.firstName} {member.lastName}
-                          {member.userId === user.id && <span className="text-muted text-sm ml-2">(You)</span>}
-                        </h3>
-                        <div className="flex gap-2 mt-1">
-                          {member.isAdmin && <Badge variant="accent">Admin</Badge>}
-                          {member.todayCompleted ? (
-                            <Badge variant="success">Completed Today</Badge>
-                          ) : (
-                            <Badge variant="warning">Pending</Badge>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <p className="text-muted">Current Streak</p>
-                        <p className="text-2xl text-foreground">{member.currentStreak} 🔥</p>
-                      </div>
-                      <div>
-                        <p className="text-muted">Completion</p>
-                        <p className="text-2xl text-foreground">{member.completionPercentage}%</p>
-                      </div>
-                      <div>
-                        <p className="text-muted">Days Done</p>
-                        <p className="text-2xl text-foreground">{member.completedDays}/100</p>
-                      </div>
-                    </div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="text-3xl">
+                    {member.todayCompleted ? '✅' : '⭕'}
                   </div>
-
-                  {/* Encouragement Section */}
-                  {!member.todayCompleted && member.userId !== user.id && (
-                    <div className="flex-shrink-0">
-                      {encouragingUserId === member.userId ? (
-                        <div className="space-y-2">
-                          <textarea
-                            value={encouragementMessage}
-                            onChange={(e) => setEncouragementMessage(e.target.value)}
-                            placeholder="Send some motivation!"
-                            rows={2}
-                            className="w-64 px-3 py-2 bg-background rounded-2xl text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/20 text-sm"
-                            maxLength={200}
-                          />
-                          <div className="flex gap-2">
-                            <Button
-                              onClick={() => sendEncouragement(member.userId)}
-                              variant="secondary"
-                              size="sm"
-                              disabled={!encouragementMessage.trim()}
-                            >
-                              Send
-                            </Button>
-                            <Button
-                              onClick={() => {
-                                setEncouragingUserId(null)
-                                setEncouragementMessage('')
-                              }}
-                              variant="ghost"
-                              size="sm"
-                            >
-                              Cancel
-                            </Button>
-                          </div>
-                        </div>
+                  <div>
+                    <h3 className="text-xl text-foreground">
+                      {member.firstName} {member.lastName}
+                      {member.userId === user.id && <span className="text-muted text-sm ml-2">(You)</span>}
+                    </h3>
+                    <div className="flex gap-2 mt-1">
+                      {member.isAdmin && <Badge variant="accent">Admin</Badge>}
+                      {member.todayCompleted ? (
+                        <Badge variant="success">Completed Today</Badge>
                       ) : (
-                        <Button
-                          onClick={() => setEncouragingUserId(member.userId)}
-                          variant="secondary"
-                          size="sm"
-                        >
-                          💪 Send Encouragement
-                        </Button>
+                        <Badge variant="warning">Pending</Badge>
                       )}
                     </div>
-                  )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted">Current Streak</p>
+                    <p className="text-2xl text-foreground">{member.currentStreak} 🔥</p>
+                  </div>
+                  <div>
+                    <p className="text-muted">Completion</p>
+                    <p className="text-2xl text-foreground">{member.completionPercentage}%</p>
+                  </div>
+                  <div>
+                    <p className="text-muted">Days Done</p>
+                    <p className="text-2xl text-foreground">{member.completedDays}/100</p>
+                  </div>
                 </div>
               </Card>
             ))}
