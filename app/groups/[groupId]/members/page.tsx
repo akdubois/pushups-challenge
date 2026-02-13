@@ -209,10 +209,10 @@ export default function GroupMembersPage({ params }: { params: Promise<{ groupId
     try {
       setIsLoading(true)
 
-      // Find today's log for the user (or create a placeholder)
+      // Find today's log for the user
       const today = startOfDay(new Date()).toISOString().split('T')[0]
 
-      const { data: todayLog } = await supabase
+      const { data: todayLog, error: logError } = await supabase
         .from('daily_logs')
         .select('id')
         .eq('group_id', groupId)
@@ -221,31 +221,20 @@ export default function GroupMembersPage({ params }: { params: Promise<{ groupId
         .eq('deleted', false)
         .maybeSingle()
 
-      let dailyLogId = todayLog?.id
+      if (logError) throw logError
 
-      // If no log exists, create a placeholder
-      if (!dailyLogId) {
-        const { data: newLog, error: createError } = await supabase
-          .from('daily_logs')
-          .insert({
-            group_id: groupId,
-            user_id: toUserId,
-            day_number: 1, // Will be calculated properly later
-            log_date: today,
-            completed: false,
-          })
-          .select('id')
-          .single()
-
-        if (createError) throw createError
-        dailyLogId = newLog.id
+      if (!todayLog) {
+        alert('Cannot send encouragement yet - this user needs to create their daily log entry first.')
+        setEncouragingUserId(null)
+        setIsLoading(false)
+        return
       }
 
       // Add encouragement as a comment
       const { error: commentError } = await supabase
         .from('comments')
         .insert({
-          daily_log_id: dailyLogId,
+          daily_log_id: todayLog.id,
           user_id: user.id,
           content: `💪 ${encouragementMessage}`,
         })
