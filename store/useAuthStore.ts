@@ -50,7 +50,23 @@ export const useAuthStore = create<AuthState>()(
 
           // Check what's in localStorage
           const storageKeys = Object.keys(localStorage)
-          console.log('[Auth] Current localStorage keys:', storageKeys.filter(k => k.includes('supabase') || k.includes('sb-')))
+          const supabaseKeys = storageKeys.filter(k => k.includes('supabase') || k.includes('sb-'))
+          console.log('[Auth] Current localStorage keys:', supabaseKeys)
+
+          // Log the actual session data from localStorage
+          if (supabaseKeys.length > 0) {
+            try {
+              const sessionData = localStorage.getItem(supabaseKeys[0])
+              if (sessionData) {
+                const parsed = JSON.parse(sessionData)
+                console.log('[Auth] Stored session expiry:', new Date(parsed.expires_at * 1000).toLocaleString())
+                console.log('[Auth] Current time:', new Date().toLocaleString())
+                console.log('[Auth] Session expired?', new Date(parsed.expires_at * 1000) < new Date())
+              }
+            } catch (e) {
+              console.error('[Auth] Error parsing stored session:', e)
+            }
+          }
 
           // Get the current session from Supabase (checks localStorage automatically)
           const { data: { session }, error: sessionError } = await supabase.auth.getSession()
