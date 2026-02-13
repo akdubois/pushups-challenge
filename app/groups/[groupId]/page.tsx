@@ -198,13 +198,13 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               <h3 className="text-xl text-foreground mb-4">
                 Quick Actions
               </h3>
-              <div className="space-y-3">
-                <Link href={`/groups/${groupId}/members`}>
+              <div className="space-y-4">
+                <Link href={`/groups/${groupId}/members`} className="block">
                   <Button variant="primary" className="w-full py-3">
                     👥 View Members & Progress
                   </Button>
                 </Link>
-                <Link href={`/groups/${groupId}/history`}>
+                <Link href={`/groups/${groupId}/history`} className="block">
                   <Button variant="secondary" className="w-full py-3">
                     📅 View & Edit History
                   </Button>

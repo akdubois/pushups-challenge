@@ -49,10 +49,14 @@ export default function GroupMembersPage({ params }: { params: Promise<{ groupId
   }, [user, isInitialized, groupId, router])
 
   const loadMembers = async () => {
-    if (!currentGroup) return
+    if (!currentGroup) {
+      console.log('[Members] No current group found')
+      return
+    }
 
     try {
       setIsLoading(true)
+      console.log('[Members] Loading members for group:', groupId)
 
       // Fetch all group memberships with user details
       const { data: memberships, error: membershipsError } = await supabase
@@ -60,7 +64,7 @@ export default function GroupMembersPage({ params }: { params: Promise<{ groupId
         .select(`
           user_id,
           is_admin,
-          users (
+          users!group_memberships_user_id_fkey (
             id,
             first_name,
             last_name
@@ -69,7 +73,16 @@ export default function GroupMembersPage({ params }: { params: Promise<{ groupId
         .eq('group_id', groupId)
         .eq('deleted', false)
 
+      console.log('[Members] Memberships response:', { memberships, error: membershipsError })
+
       if (membershipsError) throw membershipsError
+
+      if (!memberships || memberships.length === 0) {
+        console.log('[Members] No memberships found')
+        setMembers([])
+        setIsLoading(false)
+        return
+      }
 
       const today = startOfDay(new Date()).toISOString().split('T')[0]
 
@@ -77,6 +90,13 @@ export default function GroupMembersPage({ params }: { params: Promise<{ groupId
       const memberProgressPromises = memberships.map(async (membership: any) => {
         const userId = membership.user_id
         const userInfo = membership.users
+
+        console.log('[Members] Processing member:', userId, userInfo)
+
+        if (!userInfo) {
+          console.error('[Members] No user info for membership:', membership)
+          return null
+        }
 
         // Check if they completed today
         const { data: todayLog } = await supabase
@@ -128,7 +148,9 @@ export default function GroupMembersPage({ params }: { params: Promise<{ groupId
         }
       })
 
-      const memberProgress = await Promise.all(memberProgressPromises)
+      const memberProgress = (await Promise.all(memberProgressPromises)).filter(m => m !== null)
+
+      console.log('[Members] Final member progress:', memberProgress)
 
       // Sort: incomplete first, then by name
       memberProgress.sort((a, b) => {
