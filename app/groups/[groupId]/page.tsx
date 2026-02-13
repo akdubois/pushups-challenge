@@ -15,7 +15,7 @@ import { use } from 'react'
 
 export default function GroupDetailPage({ params }: { params: Promise<{ groupId: string }> }) {
   const router = useRouter()
-  const { user } = useAuthStore()
+  const { user, isInitialized } = useAuthStore()
   const { groups, setCurrentGroup, fetchUserGroups } = useGroupStore()
   const { todayLog, fetchTodayLog } = useDailyLogsStore()
   const { userStats, fetchUserStats } = useStatsStore()
@@ -27,8 +27,15 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
   const currentGroup = groups.find((g) => g.id === groupId)
 
   useEffect(() => {
-    if (!user) {
+    // Wait for auth to initialize before redirecting
+    if (isInitialized && !user) {
+      console.log('[GroupDetail] No user after auth init, redirecting to login')
       router.push('/login')
+      return
+    }
+
+    if (!isInitialized || !user) {
+      console.log('[GroupDetail] Waiting for auth to initialize...')
       return
     }
 
@@ -87,9 +94,9 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
       isMounted = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, groupId])
+  }, [user, isInitialized, groupId])
 
-  if (!user) {
+  if (!isInitialized || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">

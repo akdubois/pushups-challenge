@@ -14,7 +14,7 @@ import { differenceInDays, startOfDay, parseISO, addDays, format } from 'date-fn
 
 export default function GroupHistoryPage({ params }: { params: Promise<{ groupId: string }> }) {
   const router = useRouter()
-  const { user } = useAuthStore()
+  const { user, isInitialized } = useAuthStore()
   const { groups } = useGroupStore()
   const { logs, fetchGroupLogs } = useDailyLogsStore()
   const [isLoading, setIsLoading] = useState(true)
@@ -23,8 +23,12 @@ export default function GroupHistoryPage({ params }: { params: Promise<{ groupId
   const currentGroup = groups.find((g) => g.id === groupId)
 
   useEffect(() => {
-    if (!user) {
+    if (isInitialized && !user) {
       router.push('/login')
+      return
+    }
+
+    if (!isInitialized || !user) {
       return
     }
 
@@ -33,9 +37,9 @@ export default function GroupHistoryPage({ params }: { params: Promise<{ groupId
         setIsLoading(false)
       })
     }
-  }, [user, groupId, router, fetchGroupLogs])
+  }, [user, isInitialized, groupId, router, fetchGroupLogs])
 
-  if (!user) {
+  if (!isInitialized || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">

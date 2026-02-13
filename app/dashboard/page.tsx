@@ -10,16 +10,21 @@ import Card from '@/components/ui/Card'
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { user, logout } = useAuthStore()
+  const { user, isInitialized, logout } = useAuthStore()
   const { currentGroupId, groups, fetchUserGroups } = useGroupStore()
 
   useEffect(() => {
-    if (!user) {
+    if (isInitialized && !user) {
       router.push('/login')
-    } else {
-      fetchUserGroups(user.id)
+      return
     }
-  }, [user, router, fetchUserGroups])
+
+    if (!isInitialized || !user) {
+      return
+    }
+
+    fetchUserGroups(user.id)
+  }, [user, isInitialized, router, fetchUserGroups])
 
   const handleLogout = async () => {
     await logout()
@@ -30,7 +35,7 @@ export default function DashboardPage() {
     router.push(`/groups/${groupId}`)
   }
 
-  if (!user) {
+  if (!isInitialized || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
