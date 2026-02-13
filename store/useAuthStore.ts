@@ -38,6 +38,20 @@ export const useAuthStore = create<AuthState>()(
         try {
           console.log('[Auth] Initializing auth state...')
 
+          // Check localStorage availability
+          try {
+            const testKey = '__storage_test__'
+            localStorage.setItem(testKey, 'test')
+            localStorage.removeItem(testKey)
+            console.log('[Auth] localStorage is working')
+          } catch (e) {
+            console.error('[Auth] localStorage is NOT working:', e)
+          }
+
+          // Check what's in localStorage
+          const storageKeys = Object.keys(localStorage)
+          console.log('[Auth] Current localStorage keys:', storageKeys.filter(k => k.includes('supabase') || k.includes('sb-')))
+
           // Get the current session from Supabase (checks localStorage automatically)
           const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
@@ -124,12 +138,23 @@ export const useAuthStore = create<AuthState>()(
       login: async (credentials: LoginForm) => {
         set({ isLoading: true })
         try {
+          console.log('[Auth] Attempting login...')
           const { data, error } = await supabase.auth.signInWithPassword({
             email: credentials.email,
             password: credentials.password,
           })
 
           if (error) throw error
+          console.log('[Auth] Login successful, session:', data.session?.access_token ? 'exists' : 'missing')
+
+          // Check if session was stored in localStorage
+          setTimeout(() => {
+            const storageKeys = Object.keys(localStorage).filter(k => k.includes('supabase') || k.includes('sb-'))
+            console.log('[Auth] LocalStorage keys after login:', storageKeys)
+            if (storageKeys.length === 0) {
+              console.warn('[Auth] WARNING: No Supabase keys found in localStorage!')
+            }
+          }, 100)
 
           // Fetch user profile
           const { data: profile } = await supabase
