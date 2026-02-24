@@ -167,6 +167,7 @@ export default function DashboardPage() {
                   groupId={group.id}
                   groupName={group.name}
                   currentUserId={user.id}
+                  compact={true}
                 />
               ))}
             </div>
