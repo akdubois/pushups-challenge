@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Serif_Display, Inter } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/components/providers/AuthProvider";
 
 const dmSerif = DM_Serif_Display({
   weight: "400",
@@ -29,9 +28,7 @@ export default function RootLayout({
       <body
         className={`${dmSerif.variable} ${inter.variable} antialiased`}
       >
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        {children}
       </body>
     </html>
   );

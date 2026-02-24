@@ -1,6 +1,6 @@
 // @ts-nocheck - Temporary fix for Supabase type issues
 import { create } from 'zustand'
-import { supabase } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 import type { DailyLog, DailyLogWithCheersAndComments, InsertDailyLog, CheerEmoji } from '@/types'
 import { differenceInDays, startOfDay, parseISO } from 'date-fns'
 
@@ -37,6 +37,7 @@ export const useDailyLogsStore = create<DailyLogsState>((set, get) => ({
   fetchGroupLogs: async (groupId: string) => {
     set({ isLoading: true, lastFetchedGroupId: groupId })
     try {
+      const supabase = createClient()
       // Fetch daily logs with related data
       const { data, error } = await supabase
         .from('daily_logs')
@@ -84,6 +85,7 @@ export const useDailyLogsStore = create<DailyLogsState>((set, get) => ({
   fetchTodayLog: async (groupId: string, userId: string) => {
     set({ isLoading: true })
     try {
+      const supabase = createClient()
       const today = startOfDay(new Date()).toISOString().split('T')[0]
 
       const { data, error } = await supabase
@@ -110,6 +112,7 @@ export const useDailyLogsStore = create<DailyLogsState>((set, get) => ({
   logCompletion: async (groupId: string, userId: string, note?: string) => {
     set({ isLoading: true })
     try {
+      const supabase = createClient()
       const today = startOfDay(new Date()).toISOString().split('T')[0]
 
       // Fetch group to get start date
@@ -185,6 +188,7 @@ export const useDailyLogsStore = create<DailyLogsState>((set, get) => ({
 
   updateDayCompletion: async (groupId: string, userId: string, dayNumber: number, logDate: string, completed: boolean, existingLogId?: string) => {
     try {
+      const supabase = createClient()
       if (existingLogId) {
         // Update existing log
         const { error } = await supabase
@@ -236,6 +240,7 @@ export const useDailyLogsStore = create<DailyLogsState>((set, get) => ({
 
   addCheer: async (dailyLogId: string, userId: string, emoji: CheerEmoji) => {
     try {
+      const supabase = createClient()
       // Check if user already cheered this log
       const { data: existingCheer } = await supabase
         .from('cheers')
@@ -274,6 +279,7 @@ export const useDailyLogsStore = create<DailyLogsState>((set, get) => ({
 
   removeCheer: async (dailyLogId: string, userId: string) => {
     try {
+      const supabase = createClient()
       await supabase
         .from('cheers')
         .update({ deleted: true } as any)
@@ -292,6 +298,7 @@ export const useDailyLogsStore = create<DailyLogsState>((set, get) => ({
 
   addComment: async (dailyLogId: string, userId: string, content: string) => {
     try {
+      const supabase = createClient()
       await supabase
         .from('comments')
         .insert({
@@ -312,6 +319,7 @@ export const useDailyLogsStore = create<DailyLogsState>((set, get) => ({
 
   deleteComment: async (commentId: string) => {
     try {
+      const supabase = createClient()
       await supabase
         .from('comments')
         .update({ deleted: true } as any)

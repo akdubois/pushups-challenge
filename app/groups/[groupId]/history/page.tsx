@@ -4,17 +4,18 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { use } from 'react'
-import { useAuthStore } from '@/store/useAuthStore'
+import { useAuth } from '@/hooks/useAuth'
 import { useGroupStore } from '@/store/useGroupStore'
 import { useDailyLogsStore } from '@/store/useDailyLogsStore'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
 import DayHistoryItem from '@/components/groups/DayHistoryItem'
-import { differenceInDays, startOfDay, parseISO, addDays, format } from 'date-fns'
+import { differenceInDays, startOfDay, addDays, format } from 'date-fns'
+import { parseLocalDate } from '@/lib/utils'
 
 export default function GroupHistoryPage({ params }: { params: Promise<{ groupId: string }> }) {
   const router = useRouter()
-  const { user, isInitialized } = useAuthStore()
+  const { user, loading } = useAuth()
   const { groups } = useGroupStore()
   const { logs, fetchGroupLogs } = useDailyLogsStore()
   const [isLoading, setIsLoading] = useState(true)
@@ -23,12 +24,12 @@ export default function GroupHistoryPage({ params }: { params: Promise<{ groupId
   const currentGroup = groups.find((g) => g.id === groupId)
 
   useEffect(() => {
-    if (isInitialized && !user) {
+    if (!loading && !user) {
       router.push('/login')
       return
     }
 
-    if (!isInitialized || !user) {
+    if (loading || !user) {
       return
     }
 
@@ -37,9 +38,9 @@ export default function GroupHistoryPage({ params }: { params: Promise<{ groupId
         setIsLoading(false)
       })
     }
-  }, [user, isInitialized, groupId, router, fetchGroupLogs])
+  }, [user, loading, groupId, router, fetchGroupLogs])
 
-  if (!isInitialized || !user) {
+  if (loading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -68,7 +69,7 @@ export default function GroupHistoryPage({ params }: { params: Promise<{ groupId
   }
 
   // Calculate all days from start to today (max 100 days)
-  const startDate = startOfDay(parseISO(currentGroup.start_date))
+  const startDate = startOfDay(parseLocalDate(currentGroup.start_date))
   const today = startOfDay(new Date())
   const daysSinceStart = Math.max(0, differenceInDays(today, startDate) + 1)
   const totalDays = Math.min(daysSinceStart, 100)

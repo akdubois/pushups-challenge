@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useAuthStore } from '@/store/useAuthStore'
+import { useAuth } from '@/hooks/useAuth'
 import { useGroupStore } from '@/store/useGroupStore'
 import { useDailyLogsStore } from '@/store/useDailyLogsStore'
 import { useStatsStore } from '@/store/useStatsStore'
@@ -12,10 +12,11 @@ import Card from '@/components/ui/Card'
 import DailyLogger from '@/components/groups/DailyLogger'
 import ProgressCard from '@/components/groups/ProgressCard'
 import { use } from 'react'
+import { parseLocalDate } from '@/lib/utils'
 
 export default function GroupDetailPage({ params }: { params: Promise<{ groupId: string }> }) {
   const router = useRouter()
-  const { user, isInitialized } = useAuthStore()
+  const { user, loading } = useAuth()
   const { groups, setCurrentGroup, fetchUserGroups } = useGroupStore()
   const { todayLog, fetchTodayLog } = useDailyLogsStore()
   const { userStats, fetchUserStats } = useStatsStore()
@@ -28,13 +29,13 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
 
   useEffect(() => {
     // Wait for auth to initialize before redirecting
-    if (isInitialized && !user) {
+    if (!loading && !user) {
       console.log('[GroupDetail] No user after auth init, redirecting to login')
       router.push('/login')
       return
     }
 
-    if (!isInitialized || !user) {
+    if (loading || !user) {
       console.log('[GroupDetail] Waiting for auth to initialize...')
       return
     }
@@ -94,9 +95,9 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
       isMounted = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, isInitialized, groupId])
+  }, [user, loading, groupId])
 
-  if (!isInitialized || !user) {
+  if (loading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -170,7 +171,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                 {currentGroup.name}
               </h1>
               <p className="text-lg text-muted">
-                Started {new Date(currentGroup.start_date).toLocaleDateString()}
+                Started {parseLocalDate(currentGroup.start_date).toLocaleDateString()}
               </p>
             </div>
 

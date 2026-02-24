@@ -3,39 +3,38 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useAuthStore } from '@/store/useAuthStore'
+import { useAuth } from '@/hooks/useAuth'
 import { useGroupStore } from '@/store/useGroupStore'
+import { logout } from '@/app/actions/auth'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
+import { parseLocalDate } from '@/lib/utils'
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { user, isInitialized, logout } = useAuthStore()
+  const { user, loading } = useAuth()
   const { currentGroupId, groups, fetchUserGroups } = useGroupStore()
 
   useEffect(() => {
-    if (isInitialized && !user) {
+    if (!loading && !user) {
       router.push('/login')
       return
     }
 
-    if (!isInitialized || !user) {
-      return
+    if (!loading && user) {
+      fetchUserGroups(user.id)
     }
-
-    fetchUserGroups(user.id)
-  }, [user, isInitialized, router, fetchUserGroups])
+  }, [user, loading, router, fetchUserGroups])
 
   const handleLogout = async () => {
     await logout()
-    router.push('/')
   }
 
   const handleSelectGroup = (groupId: string) => {
     router.push(`/groups/${groupId}`)
   }
 
-  if (!isInitialized || !user) {
+  if (loading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -53,7 +52,7 @@ export default function DashboardPage() {
         <div className="flex justify-between items-center mb-12">
           <div>
             <h1 className="text-5xl text-foreground mb-3">
-              Welcome back, {user.firstName}
+              Welcome back, {user.email?.split('@')[0]}
             </h1>
             <p className="text-lg text-muted">
               Ready to log today's pushups?
@@ -130,7 +129,7 @@ export default function DashboardPage() {
                         {group.name}
                       </h3>
                       <p className="text-sm text-muted">
-                        Started: {new Date(group.start_date).toLocaleDateString()}
+                        Started: {parseLocalDate(group.start_date).toLocaleDateString()}
                       </p>
                       {group.membership.is_admin && (
                         <span className="inline-block mt-2 text-xs bg-accent text-white px-3 py-1 rounded-full">

@@ -1,6 +1,6 @@
 // @ts-nocheck - Temporary fix for Supabase type issues
 import { create } from 'zustand'
-import { supabase } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 import type { UserStats, GroupStats, GroupLeaderboardEntry } from '@/types'
 import { parseISO, differenceInDays, startOfDay } from 'date-fns'
 
@@ -22,6 +22,7 @@ export const useStatsStore = create<StatsState>((set, get) => ({
 
   calculateStreaks: async (userId: string, groupId: string) => {
     try {
+      const supabase = createClient()
       // Fetch all completed logs for this user in this group
       const { data: logs, error } = await supabase
         .from('daily_logs')
@@ -76,6 +77,7 @@ export const useStatsStore = create<StatsState>((set, get) => ({
   fetchUserStats: async (groupId: string, userId: string) => {
     set({ isLoading: true })
     try {
+      const supabase = createClient()
       // Fetch group to get start date and penalty
       const { data: group, error: groupError } = await supabase
         .from('groups')
@@ -142,6 +144,7 @@ export const useStatsStore = create<StatsState>((set, get) => ({
   fetchGroupStats: async (groupId: string) => {
     set({ isLoading: true })
     try {
+      const supabase = createClient()
       // Fetch all group members
       const { data: memberships, error: membershipsError } = await supabase
         .from('group_memberships')

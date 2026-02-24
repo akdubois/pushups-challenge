@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useAuthStore } from '@/store/useAuthStore'
+import { useAuth } from '@/hooks/useAuth'
 import { useGroupStore } from '@/store/useGroupStore'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -11,17 +11,17 @@ import Card from '@/components/ui/Card'
 
 export default function JoinGroupPage() {
   const router = useRouter()
-  const { user } = useAuthStore()
+  const { user, loading } = useAuth()
   const { joinGroup, isLoading } = useGroupStore()
 
   const [inviteCode, setInviteCode] = useState('')
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (!user) {
+    if (!loading && !user) {
       router.push('/login')
     }
-  }, [user, router])
+  }, [user, loading, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,7 +40,7 @@ export default function JoinGroupPage() {
     }
   }
 
-  if (!user) {
+  if (loading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">

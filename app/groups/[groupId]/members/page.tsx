@@ -4,12 +4,12 @@
 import { useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useAuthStore } from '@/store/useAuthStore'
+import { useAuth } from '@/hooks/useAuth'
 import { useGroupStore } from '@/store/useGroupStore'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
-import { supabase } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 import { startOfDay } from 'date-fns'
 
 interface MemberProgress {
@@ -25,7 +25,7 @@ interface MemberProgress {
 
 export default function GroupMembersPage({ params }: { params: Promise<{ groupId: string }> }) {
   const router = useRouter()
-  const { user, isInitialized } = useAuthStore()
+  const { user, loading } = useAuth()
   const { groups, fetchUserGroups } = useGroupStore()
   const [members, setMembers] = useState<MemberProgress[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -36,13 +36,13 @@ export default function GroupMembersPage({ params }: { params: Promise<{ groupId
   useEffect(() => {
     console.log('[Members] useEffect triggered', { isInitialized, hasUser: !!user, groupId, hasCurrentGroup: !!currentGroup })
 
-    if (isInitialized && !user) {
+    if (!loading && !user) {
       console.log('[Members] No user, redirecting to login')
       router.push('/login')
       return
     }
 
-    if (!isInitialized || !user) {
+    if (loading || !user) {
       console.log('[Members] Waiting for auth initialization')
       return
     }
@@ -201,7 +201,7 @@ export default function GroupMembersPage({ params }: { params: Promise<{ groupId
     }
   }
 
-  if (!isInitialized || !user) {
+  if (loading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">

@@ -3,14 +3,13 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useAuthStore } from '@/store/useAuthStore'
+import { createClient } from '@/lib/supabase/client'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Card from '@/components/ui/Card'
 
 export default function RegisterPage() {
   const router = useRouter()
-  const { register, isLoading } = useAuthStore()
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -19,6 +18,7 @@ export default function RegisterPage() {
     lastName: '',
   })
   const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
@@ -42,17 +42,36 @@ export default function RegisterPage() {
       return
     }
 
+    setIsLoading(true)
+
     try {
-      await register({
+      const supabase = createClient()
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+
+      const { error: signUpError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+        options: {
+          data: {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            timezone,
+          },
+        },
       })
+
+      if (signUpError) {
+        setError(signUpError.message)
+        setIsLoading(false)
+        return
+      }
+
       // New users have no groups, so always redirect to create
       router.push('/groups/create')
+      router.refresh() // Refresh server components
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.')
+      setIsLoading(false)
     }
   }
 

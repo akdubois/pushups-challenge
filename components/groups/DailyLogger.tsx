@@ -5,7 +5,8 @@ import { useDailyLogsStore } from '@/store/useDailyLogsStore'
 import type { DailyLog, Group } from '@/types'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
-import { differenceInDays, startOfDay, parseISO } from 'date-fns'
+import { differenceInDays, startOfDay } from 'date-fns'
+import { parseLocalDate } from '@/lib/utils'
 
 interface DailyLoggerProps {
   groupId: string
@@ -21,7 +22,7 @@ export default function DailyLogger({ groupId, userId, todayLog, group }: DailyL
 
   // Calculate current day number based on group start date
   const calculateCurrentDay = () => {
-    const startDate = startOfDay(parseISO(group.start_date))
+    const startDate = startOfDay(parseLocalDate(group.start_date))
     const today = startOfDay(new Date())
     const daysSinceStart = differenceInDays(today, startDate)
     return Math.min(Math.max(daysSinceStart + 1, 1), 100)

@@ -3,27 +3,27 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useAuthStore } from '@/store/useAuthStore'
+import { useAuth } from '@/hooks/useAuth'
 import { getPostLoginRedirect } from '@/lib/routing'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
 
 export default function Home() {
   const router = useRouter()
-  const { user, isInitialized } = useAuthStore()
+  const { user, loading } = useAuth()
 
   useEffect(() => {
     const redirectIfLoggedIn = async () => {
-      if (isInitialized && user) {
+      if (!loading && user) {
         const redirectPath = await getPostLoginRedirect()
         router.push(redirectPath)
       }
     }
 
     redirectIfLoggedIn()
-  }, [user, isInitialized, router])
+  }, [user, loading, router])
 
-  if (!isInitialized) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">

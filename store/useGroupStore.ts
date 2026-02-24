@@ -1,7 +1,7 @@
 // @ts-nocheck - Temporary fix for Supabase type issues
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { supabase } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 import type { Group, GroupWithMembership, CreateGroupForm, JoinGroupForm } from '@/types'
 
 interface GroupState {
@@ -40,6 +40,7 @@ export const useGroupStore = create<GroupState>()(
       fetchUserGroups: async (userId: string) => {
         set({ isLoading: true })
         try {
+          const supabase = createClient()
           // Fetch groups where user is a member
           const { data: memberships, error } = await supabase
             .from('group_memberships')
@@ -86,6 +87,7 @@ export const useGroupStore = create<GroupState>()(
       createGroup: async (userId: string, form: CreateGroupForm) => {
         set({ isLoading: true })
         try {
+          const supabase = createClient()
           const inviteCode = generateInviteCode()
           const timezone = form.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
 
@@ -129,6 +131,7 @@ export const useGroupStore = create<GroupState>()(
       joinGroup: async (userId: string, form: JoinGroupForm) => {
         set({ isLoading: true })
         try {
+          const supabase = createClient()
           // Find group by invite code
           const { data: group, error: groupError } = await supabase
             .from('groups')
@@ -177,6 +180,7 @@ export const useGroupStore = create<GroupState>()(
       leaveGroup: async (userId: string, groupId: string) => {
         set({ isLoading: true })
         try {
+          const supabase = createClient()
           // Soft delete membership
           const { error } = await supabase
             .from('group_memberships')

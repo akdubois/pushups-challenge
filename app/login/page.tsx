@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useAuthStore } from '@/store/useAuthStore'
+import { createClient } from '@/lib/supabase/client'
 import { getPostLoginRedirect } from '@/lib/routing'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -11,23 +11,36 @@ import Card from '@/components/ui/Card'
 
 export default function LoginPage() {
   const router = useRouter()
-  const { login, isLoading } = useAuthStore()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setIsLoading(true)
 
     try {
-      await login({ email, password })
+      const supabase = createClient()
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (signInError) {
+        setError(signInError.message)
+        setIsLoading(false)
+        return
+      }
 
       // Smart redirect based on group membership
       const redirectPath = await getPostLoginRedirect()
       router.push(redirectPath)
+      router.refresh() // Refresh server components
     } catch (err: any) {
       setError(err.message || 'Login failed. Please check your credentials.')
+      setIsLoading(false)
     }
   }
 

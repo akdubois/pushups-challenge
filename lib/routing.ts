@@ -1,5 +1,4 @@
-import { useGroupStore } from '@/store/useGroupStore'
-import { useAuthStore } from '@/store/useAuthStore'
+import { createClient } from '@/lib/supabase/client'
 
 /**
  * Get the appropriate redirect path based on user's group membership
@@ -8,35 +7,42 @@ import { useAuthStore } from '@/store/useAuthStore'
  * - 2+ groups: /dashboard
  */
 export async function getPostLoginRedirect(): Promise<string> {
-  const { user } = useAuthStore.getState()
+  const supabase = createClient()
 
-  if (!user) {
+  // Get current user
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+  if (userError || !user) {
     return '/login'
   }
 
-  const { groups, fetchUserGroups } = useGroupStore.getState()
+  // Fetch user's groups
+  try {
+    const { data: memberships, error } = await supabase
+      .from('group_memberships')
+      .select(`
+        *,
+        groups:group_id (*)
+      `)
+      .eq('user_id', user.id)
+      .eq('deleted', false)
 
-  // Fetch groups if not already loaded
-  if (groups.length === 0) {
-    try {
-      await fetchUserGroups(user.id)
-    } catch (error) {
-      console.error('Failed to fetch groups:', error)
+    if (error) throw error
+
+    const groups = (memberships as any)?.filter((m: any) => m.groups) || []
+
+    if (groups.length === 0) {
+      // No groups - prompt to create one
+      return '/groups/create'
+    } else if (groups.length === 1) {
+      // Single group - go directly to it
+      return `/groups/${groups[0].group_id}`
+    } else {
+      // Multiple groups - show dashboard to choose
       return '/dashboard'
     }
-  }
-
-  // Re-check after fetching
-  const currentGroups = useGroupStore.getState().groups
-
-  if (currentGroups.length === 0) {
-    // No groups - prompt to create one
-    return '/groups/create'
-  } else if (currentGroups.length === 1) {
-    // Single group - go directly to it
-    return `/groups/${currentGroups[0].id}`
-  } else {
-    // Multiple groups - show dashboard to choose
+  } catch (error) {
+    console.error('Failed to fetch groups:', error)
     return '/dashboard'
   }
 }

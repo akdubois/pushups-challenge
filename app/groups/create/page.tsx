@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useAuthStore } from '@/store/useAuthStore'
+import { useAuth } from '@/hooks/useAuth'
 import { useGroupStore } from '@/store/useGroupStore'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -11,7 +11,7 @@ import Card from '@/components/ui/Card'
 
 export default function CreateGroupPage() {
   const router = useRouter()
-  const { user } = useAuthStore()
+  const { user, loading } = useAuth()
   const { createGroup, isLoading } = useGroupStore()
 
   const [formData, setFormData] = useState({
@@ -22,10 +22,10 @@ export default function CreateGroupPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (!user) {
+    if (!loading && !user) {
       router.push('/login')
     }
-  }, [user, router])
+  }, [user, loading, router])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
@@ -38,7 +38,7 @@ export default function CreateGroupPage() {
     e.preventDefault()
     setError('')
 
-    if (!user) return
+    if (loading || !user) return
 
     try {
       const group = await createGroup(user.id, {
@@ -53,7 +53,7 @@ export default function CreateGroupPage() {
     }
   }
 
-  if (!user) {
+  if (loading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
