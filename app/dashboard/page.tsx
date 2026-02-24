@@ -8,6 +8,7 @@ import { useGroupStore } from '@/store/useGroupStore'
 import { logout } from '@/app/actions/auth'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
+import GroupLeaderboard from '@/components/groups/GroupLeaderboard'
 import { parseLocalDate } from '@/lib/utils'
 
 export default function DashboardPage() {
@@ -47,7 +48,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background p-4">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-12">
           <div>
@@ -63,30 +64,14 @@ export default function DashboardPage() {
           </Button>
         </div>
 
-        {/* Groups Section */}
-        <Card className="mb-8">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl text-foreground">
-              Your Challenge Groups
-            </h2>
-            {groups.length > 0 && (
-              <div className="flex gap-2">
-                <Link href="/groups/create">
-                  <Button variant="secondary" size="sm">
-                    + Create
-                  </Button>
-                </Link>
-                <Link href="/groups/join">
-                  <Button variant="ghost" size="sm">
-                    Join
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </div>
-
-          {groups.length === 0 ? (
+        {/* Main Content Grid */}
+        {groups.length === 0 ? (
+          // No groups: show centered call-to-action
+          <Card className="mb-8">
             <div className="text-center py-12">
+              <h2 className="text-2xl text-foreground mb-6">
+                Your Challenge Groups
+              </h2>
               <p className="text-lg text-muted mb-6">
                 You're not part of any groups yet.
               </p>
@@ -103,53 +88,90 @@ export default function DashboardPage() {
                 </Link>
               </div>
             </div>
-          ) : (
-            <>
-              {groups.length === 1 && (
-                <div className="bg-accent/5 rounded-2xl p-4 mb-6">
-                  <p className="text-sm text-foreground text-center">
-                    👉 Click your group below to start logging, or create/join more groups above
-                  </p>
-                </div>
-              )}
-              <div className="space-y-3">
-              {groups.map((group) => (
-                <div
-                  key={group.id}
-                  className={`p-5 rounded-2xl cursor-pointer transition-all shadow-sm ${
-                    currentGroupId === group.id
-                      ? 'bg-accent/5 ring-2 ring-accent/20'
-                      : 'bg-surface hover:bg-surface/80 hover:shadow-md'
-                  }`}
-                  onClick={() => handleSelectGroup(group.id)}
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="text-lg text-foreground mb-1">
-                        {group.name}
-                      </h3>
-                      <p className="text-sm text-muted">
-                        Started: {parseLocalDate(group.start_date).toLocaleDateString()}
-                      </p>
-                      {group.membership.is_admin && (
-                        <span className="inline-block mt-2 text-xs bg-accent text-white px-3 py-1 rounded-full">
-                          Admin
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-muted mb-2">Invite Code</p>
-                      <code className="text-sm font-mono bg-background px-3 py-1.5 rounded-full">
-                        {group.invite_code}
-                      </code>
-                    </div>
+          </Card>
+        ) : (
+          // Has groups: show two-column layout
+          <div className="lg:grid lg:grid-cols-2 lg:gap-8 lg:items-start mb-8">
+            {/* Left Column: Groups */}
+            <div>
+              <Card>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl text-foreground">
+                    Your Challenge Groups
+                  </h2>
+                  <div className="flex gap-2">
+                    <Link href="/groups/create">
+                      <Button variant="secondary" size="sm">
+                        + Create
+                      </Button>
+                    </Link>
+                    <Link href="/groups/join">
+                      <Button variant="ghost" size="sm">
+                        Join
+                      </Button>
+                    </Link>
                   </div>
                 </div>
+
+                {groups.length === 1 && (
+                  <div className="bg-accent/5 rounded-2xl p-4 mb-6">
+                    <p className="text-sm text-foreground text-center">
+                      👉 Click your group below to start logging, or create/join more groups above
+                    </p>
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  {groups.map((group) => (
+                    <div
+                      key={group.id}
+                      className={`p-5 rounded-2xl cursor-pointer transition-all shadow-sm ${
+                        currentGroupId === group.id
+                          ? 'bg-accent/5 ring-2 ring-accent/20'
+                          : 'bg-surface hover:bg-surface/80 hover:shadow-md'
+                      }`}
+                      onClick={() => handleSelectGroup(group.id)}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="text-lg text-foreground mb-1">
+                            {group.name}
+                          </h3>
+                          <p className="text-sm text-muted">
+                            Started: {parseLocalDate(group.start_date).toLocaleDateString()}
+                          </p>
+                          {group.membership.is_admin && (
+                            <span className="inline-block mt-2 text-xs bg-accent text-white px-3 py-1 rounded-full">
+                              Admin
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-muted mb-2">Invite Code</p>
+                          <code className="text-sm font-mono bg-background px-3 py-1.5 rounded-full">
+                            {group.invite_code}
+                          </code>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
+
+            {/* Right Column: Leaderboards */}
+            <div>
+              {groups.map((group) => (
+                <GroupLeaderboard
+                  key={group.id}
+                  groupId={group.id}
+                  groupName={group.name}
+                  currentUserId={user.id}
+                />
               ))}
-              </div>
-            </>
-          )}
-        </Card>
+            </div>
+          </div>
+        )}
 
         {/* Info Card */}
         <Card className="bg-accent/5">
