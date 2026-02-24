@@ -11,6 +11,7 @@ import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
 import DailyLogger from '@/components/groups/DailyLogger'
 import ProgressCard from '@/components/groups/ProgressCard'
+import GroupLeaderboard from '@/components/groups/GroupLeaderboard'
 import { use } from 'react'
 import { parseLocalDate } from '@/lib/utils'
 
@@ -221,17 +222,13 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               isLoading={isLoading}
             />
 
-            {/* Coming Soon */}
-            <Card className="bg-accent/5">
-              <div className="text-center py-4">
-                <p className="text-sm text-muted mb-4">Coming Soon</p>
-                <div className="space-y-2">
-                  <p className="text-foreground">🎉 Activity Feed</p>
-                  <p className="text-foreground">⚡ Real-time Updates</p>
-                  <p className="text-foreground">🏆 Achievements</p>
-                </div>
-              </div>
-            </Card>
+            {/* Compact Leaderboard */}
+            <GroupLeaderboard
+              groupId={groupId}
+              groupName={currentGroup.name}
+              currentUserId={user.id}
+              compact={true}
+            />
           </div>
 
           {/* Group Info - appears after progress on mobile */}

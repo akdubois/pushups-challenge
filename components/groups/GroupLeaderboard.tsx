@@ -13,6 +13,7 @@ interface GroupLeaderboardProps {
   groupName: string
   currentUserId: string
   showMedals?: boolean
+  compact?: boolean  // Show only top 3 with expand option
   className?: string
 }
 
@@ -25,12 +26,14 @@ export default function GroupLeaderboard({
   groupName,
   currentUserId,
   showMedals = true,
+  compact = false,
   className = '',
 }: GroupLeaderboardProps) {
   const { fetchGroupStats, groupStats, isLoading } = useStatsStore()
   const [membersWithCompletion, setMembersWithCompletion] = useState<MemberWithCompletion[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isExpanded, setIsExpanded] = useState(false)
 
   useEffect(() => {
     const loadLeaderboard = async () => {
@@ -148,12 +151,19 @@ export default function GroupLeaderboard({
     )
   }
 
+  // Determine which members to display
+  const displayedMembers = compact && !isExpanded
+    ? membersWithCompletion.slice(0, 3)
+    : membersWithCompletion
+
+  const hasMore = compact && membersWithCompletion.length > 3
+
   // Main leaderboard display
   return (
     <Card className={`mb-6 ${className}`}>
       <h3 className="text-xl text-foreground mb-4">{groupName} Leaderboard</h3>
       <div className="space-y-2">
-        {membersWithCompletion.map((entry, index) => {
+        {displayedMembers.map((entry, index) => {
           const isCurrentUser = entry.user.id === currentUserId
 
           return (
@@ -195,6 +205,20 @@ export default function GroupLeaderboard({
             </div>
           )
         })}
+
+        {/* Expand/Collapse button for compact mode */}
+        {hasMore && (
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="w-full mt-3 py-2 text-sm text-accent hover:text-accent/80 transition-colors"
+          >
+            {isExpanded ? (
+              <>Show less ↑</>
+            ) : (
+              <>Show {membersWithCompletion.length - 3} more ↓</>
+            )}
+          </button>
+        )}
       </div>
     </Card>
   )
