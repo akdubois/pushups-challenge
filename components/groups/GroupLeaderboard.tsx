@@ -56,7 +56,7 @@ export default function GroupLeaderboard({
           .from('groups')
           .select('start_date')
           .eq('id', groupId)
-          .single()
+          .single<{ start_date: string }>()
 
         if (groupError || !group?.start_date) {
           throw new Error('Failed to fetch group start date')
