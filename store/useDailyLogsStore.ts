@@ -12,6 +12,7 @@ interface DailyLogsState {
 
   // Actions
   fetchGroupLogs: (groupId: string) => Promise<void>
+  fetchUserLogs: (groupId: string, userId: string) => Promise<void>
   fetchTodayLog: (groupId: string, userId: string) => Promise<void>
   logCompletion: (groupId: string, userId: string, note?: string) => Promise<void>
   updateDayCompletion: (groupId: string, userId: string, dayNumber: number, logDate: string, completed: boolean, existingLogId?: string) => Promise<void>
@@ -69,6 +70,31 @@ export const useDailyLogsStore = create<DailyLogsState>((set, get) => ({
         .eq('deleted', false)
         .order('log_date', { ascending: false })
         .limit(50)
+
+      if (error) throw error
+
+      set({
+        logs: data as any,
+        isLoading: false,
+      })
+    } catch (error) {
+      set({ isLoading: false })
+      throw error
+    }
+  },
+
+  fetchUserLogs: async (groupId: string, userId: string) => {
+    set({ isLoading: true, lastFetchedGroupId: groupId })
+    try {
+      const supabase = createClient()
+      // Fetch only this user's logs for the group (no limit needed for 100-day challenge)
+      const { data, error } = await supabase
+        .from('daily_logs')
+        .select('*')
+        .eq('group_id', groupId)
+        .eq('user_id', userId)
+        .eq('deleted', false)
+        .order('day_number', { ascending: false })
 
       if (error) throw error
 

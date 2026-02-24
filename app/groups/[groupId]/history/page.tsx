@@ -17,7 +17,7 @@ export default function GroupHistoryPage({ params }: { params: Promise<{ groupId
   const router = useRouter()
   const { user, loading } = useAuth()
   const { groups } = useGroupStore()
-  const { logs, fetchGroupLogs } = useDailyLogsStore()
+  const { logs, fetchUserLogs } = useDailyLogsStore()
   const [isLoading, setIsLoading] = useState(true)
 
   const { groupId } = use(params)
@@ -34,11 +34,11 @@ export default function GroupHistoryPage({ params }: { params: Promise<{ groupId
     }
 
     if (groupId) {
-      fetchGroupLogs(groupId).finally(() => {
+      fetchUserLogs(groupId, user.id).finally(() => {
         setIsLoading(false)
       })
     }
-  }, [user, loading, groupId, router, fetchGroupLogs])
+  }, [user, loading, groupId, router, fetchUserLogs])
 
   if (loading || !user) {
     return (
