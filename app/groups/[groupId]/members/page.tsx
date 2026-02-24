@@ -34,7 +34,7 @@ export default function GroupMembersPage({ params }: { params: Promise<{ groupId
   const currentGroup = groups.find((g) => g.id === groupId)
 
   useEffect(() => {
-    console.log('[Members] useEffect triggered', { isInitialized, hasUser: !!user, groupId, hasCurrentGroup: !!currentGroup })
+    console.log('[Members] useEffect triggered', { hasUser: !!user, groupId, hasCurrentGroup: !!currentGroup })
 
     if (!loading && !user) {
       console.log('[Members] No user, redirecting to login')
@@ -60,12 +60,14 @@ export default function GroupMembersPage({ params }: { params: Promise<{ groupId
     }
 
     loadData()
-  }, [user, isInitialized, groupId, router])
+  }, [user, loading, groupId, router])
 
   const loadMembers = async () => {
     try {
       setIsLoading(true)
       console.log('[Members] Loading members for group:', groupId)
+
+      const supabase = createClient()
 
       // Get current group from store
       const { groups: currentGroups } = useGroupStore.getState()
