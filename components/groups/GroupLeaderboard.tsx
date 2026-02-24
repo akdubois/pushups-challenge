@@ -75,7 +75,7 @@ export default function GroupLeaderboard({
               .eq('group_id', groupId)
               .eq('day_number', currentDayNumber)
               .eq('deleted', false)
-              .maybeSingle()
+              .maybeSingle<{ completed: boolean }>()
 
             return {
               ...entry,
