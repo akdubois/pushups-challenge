@@ -59,6 +59,7 @@ export default function GroupLeaderboard({
           .single()
 
         if (groupError) throw groupError
+        if (!group) throw new Error('Group not found')
 
         const startDate = parseISO(group.start_date)
         const currentDayNumber = differenceInDays(startOfDay(new Date()), startDate) + 1
