@@ -95,7 +95,7 @@ export const useDailyLogsStore = create<DailyLogsState>((set, get) => ({
         .eq('user_id', userId)
         .eq('log_date', today)
         .eq('deleted', false)
-        .maybeSingle()
+        .maybeSingle<DailyLog>()
 
       if (error) throw error
 
@@ -120,9 +120,9 @@ export const useDailyLogsStore = create<DailyLogsState>((set, get) => ({
         .from('groups')
         .select('start_date')
         .eq('id', groupId)
-        .single()
+        .single<{ start_date: string }>()
 
-      if (groupError || !group) throw groupError || new Error('Group not found')
+      if (groupError || !group?.start_date) throw groupError || new Error('Group not found')
 
       const dayNumber = calculateDayNumber((group as any).start_date, today)
 
@@ -134,7 +134,7 @@ export const useDailyLogsStore = create<DailyLogsState>((set, get) => ({
         .eq('user_id', userId)
         .eq('log_date', today)
         .eq('deleted', false)
-        .maybeSingle()
+        .maybeSingle<DailyLog>()
 
       let log: DailyLog
 
@@ -198,8 +198,13 @@ export const useDailyLogsStore = create<DailyLogsState>((set, get) => ({
             completed_at: completed ? new Date().toISOString() : null,
           } as any)
           .eq('id', existingLogId)
+          .select()
+          .single()
 
-        if (error) throw error
+        if (error) {
+          console.error('Error updating daily log:', error)
+          throw error
+        }
       } else {
         // Create new log
         const { error } = await supabase
@@ -212,13 +217,19 @@ export const useDailyLogsStore = create<DailyLogsState>((set, get) => ({
             completed,
             completed_at: completed ? new Date().toISOString() : null,
           })
+          .select()
+          .single()
 
-        if (error) throw error
+        if (error) {
+          console.error('Error creating daily log:', error)
+          throw error
+        }
       }
 
       // Refresh group logs
       await get().fetchGroupLogs(groupId)
     } catch (error) {
+      console.error('updateDayCompletion failed:', error)
       throw error
     }
   },
@@ -248,7 +259,7 @@ export const useDailyLogsStore = create<DailyLogsState>((set, get) => ({
         .eq('daily_log_id', dailyLogId)
         .eq('user_id', userId)
         .eq('deleted', false)
-        .maybeSingle()
+        .maybeSingle<{ id: string; emoji: CheerEmoji }>()
 
       if (existingCheer) {
         // Update existing cheer
